@@ -36,10 +36,6 @@
 
 #include "cypress-touchkey.h"
 #include <linux/regulator/consumer.h>
-#ifdef CONFIG_TOUCH_CYPRESS_SWEEP2WAKE
-#include <linux/input/sweep2wake.h>
-#include <linux/s2w-switch.h>
-#endif
 
 /*
 Cypress touchkey register
