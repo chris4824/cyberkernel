@@ -778,7 +778,7 @@ static int sec_bat_check_detbat(struct sec_bat_info *info)
 
 		pr_info("%s : vf adc : %d\n", __func__, adc_physical);
 
-		if (adc_physical > 500 && adc_physical < 900)
+		if (adc_physical > 500 && adc_physical < 1200)
 			value.intval = BAT_DETECTED;
 		else
 			value.intval = BAT_NOT_DETECTED;
@@ -816,7 +816,7 @@ static int sec_bat_check_detbat(struct sec_bat_info *info)
 	defined(CONFIG_USA_MODEL_SGH_T769) || \
 	defined(CONFIG_USA_MODEL_SGH_I577) || \
 	defined(CONFIG_CAN_MODEL_SGH_I577R)
-	if (adc_physical > 500 && adc_physical < 900)
+	if (adc_physical > 500 && adc_physical < 1200)
 #elif defined(CONFIG_USA_MODEL_SGH_I717)
 	if ((get_hw_rev() == 0x01) &&
 		(adc_physical > 1290 && adc_physical < 1800))
@@ -2438,6 +2438,8 @@ static void sec_bat_update_info(struct sec_bat_info *info)
 	sec_bat_notify_vcell2charger(info);
 }
 
+int cable_type = 0;
+
 static int sec_bat_enable_charging(struct sec_bat_info *info, bool enable)
 {
 	struct power_supply *psy = power_supply_get_by_name(info->charger_name);
@@ -2458,8 +2460,8 @@ static int sec_bat_enable_charging(struct sec_bat_info *info, bool enable)
 		switch (info->cable_type) {
 		case CABLE_TYPE_USB:
 			val_type.intval = POWER_SUPPLY_STATUS_CHARGING;
-			val_chg_current.intval = 500; /* USB 500 mode */
-			info->full_cond_count = USB_FULL_COND_COUNT;
+			val_chg_current.intval = 1200; /* USB 1200 mode */
+			info->full_cond_count = FULL_CHG_COND_COUNT;
 			info->full_cond_voltage = USB_FULL_COND_VOLTAGE;
 			break;
 		case CABLE_TYPE_AC:
@@ -2467,8 +2469,8 @@ static int sec_bat_enable_charging(struct sec_bat_info *info, bool enable)
 		case CABLE_TYPE_UARTOFF:
 		case CABLE_TYPE_UNKNOWN:
 			val_type.intval = POWER_SUPPLY_STATUS_CHARGING;
-			 /* input : 900mA, output : 900mA */
-			val_chg_current.intval = 900;
+			 /* input : 1200mA, output : 1200mA */
+			val_chg_current.intval = 1200;
 			info->full_cond_count = FULL_CHG_COND_COUNT;
 			info->full_cond_voltage = FULL_CHARGE_COND_VOLTAGE;
 			break;
@@ -2482,6 +2484,24 @@ static int sec_bat_enable_charging(struct sec_bat_info *info, bool enable)
 		default:
 			dev_err(info->dev, "%s: Invalid func use\n", __func__);
 			return -EINVAL;
+		}
+
+		switch (info->cable_type) {
+			case CABLE_TYPE_NONE:
+				cable_type = 0;
+				break;
+			case CABLE_TYPE_USB:
+				cable_type = 1;
+				break;
+			case CABLE_TYPE_AC:
+			case CABLE_TYPE_CARDOCK:
+			case CABLE_TYPE_UARTOFF:
+			case CABLE_TYPE_UNKNOWN:
+				cable_type = 2;
+				break;
+			case CABLE_TYPE_MISC:
+				cable_type = 3;
+				break;
 		}
 
 		/* Set charging current */
@@ -3125,12 +3145,12 @@ static void sec_bat_measure_work(struct work_struct *work)
 							info, 1000);
 					}
 				} else {
-					if (set_chg_current != 900) {
+					if (set_chg_current != 1200) {
 						pr_info("[SC-03D] %s : "
 							"adjust current to"
 							" 0.9A\n", __func__);
 						sec_bat_adjust_charging_current(
-							info, 900);
+							info, 1200);
 					}
 				}
 			} else {
@@ -3165,11 +3185,11 @@ static void sec_bat_measure_work(struct work_struct *work)
 						info, 1000);
 				}
 			} else {
-				if (set_chg_current != 900) {
+				if (set_chg_current != 1200) {
 					pr_info("%s : adjust curretn to 0.9A\n",
 						__func__);
 					sec_bat_adjust_charging_current(
-						info, 900);
+						info, 1200);
 				}
 			}
 		} else {
